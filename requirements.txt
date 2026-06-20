@@ -1,0 +1,14 @@
+Flask
+Flask-SQLAlchemy
+Flask-JWT-Extended
+psycopg2-binary
+python-dotenv
+Flask-Cors
+Werkzeug
+Flask-SocketIO
+gevent
+gevent-websocket
+google-genai
+requests
+PyPDF2
+python-docx
