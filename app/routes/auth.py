@@ -3,6 +3,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, set_access_cookies, unset_jwt_cookies
 from app import db
 from app.models.user import User
+from app.models.plan import Plan
+from app.models.subscription import Subscription
+from datetime import datetime, timedelta
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -21,9 +24,29 @@ def signup():
         password_hash=generate_password_hash(data['password'])
     )
     db.session.add(new_user)
+    db.session.flush() # Get new_user.id
+    
+    # Get Free Plan with id '1'
+    free_plan = Plan.query.get('1')
+    if free_plan:
+        # Create Subscription for the user
+        new_subscription = Subscription(
+            user_id=new_user.id,
+            plan_id=free_plan.id,
+            start_date=datetime.utcnow(),
+            end_date=datetime.utcnow() + timedelta(days=free_plan.duration_days),
+            credits_allocated=free_plan.credits,
+            credits_used=0,
+            status='active'
+        )
+        db.session.add(new_subscription)
+        
+        # Assign credits to user
+        new_user.credits_remaining = free_plan.credits
+
     db.session.commit()
 
-    return jsonify({'message': 'User created successfully', 'user': new_user.to_dict()}), 201
+    return jsonify({'message': 'User created successfully with Free plan', 'user': new_user.to_dict()}), 201
 
 @auth_bp.route('/login', methods=['POST'])
 def login():

@@ -1,9 +1,12 @@
+import os
 import time
 from openai import OpenAI
-from app.config import Config
+from dotenv import load_dotenv
+
+load_dotenv()
 
 client = OpenAI(
-    api_key=Config.DEEPSEEK_API_KEY,
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
     base_url="https://api.deepseek.com"
 )
 
@@ -11,7 +14,7 @@ def generate_with_retry(messages, retries=3):
     for attempt in range(retries):
         try:
             response = client.chat.completions.create(
-                model=Config.MODEL,
+                model=os.getenv("MODEL", "deepseek-chat"),
                 messages=messages,
                 temperature=0.7,
                 max_tokens=2048
@@ -29,7 +32,7 @@ def generate_with_retry(messages, retries=3):
                 from google import genai
                 from google.genai import types
                 
-                gemini_client = genai.Client(api_key=Config.GEMINI_API_KEY)
+                gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
                 
                 # Convert OpenAI messages to Gemini format
                 # System prompt usually goes to system_instruction in Gemini 2.0

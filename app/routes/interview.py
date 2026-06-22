@@ -86,8 +86,20 @@ def end():
     if session:
         session.ended_at = datetime.utcnow()
         session.interview_status = 'completed'
+        
+        # Deduct 10 credits
+        user = session.user
+        if user:
+            user.credits_remaining = max(0, (user.credits_remaining or 0) - 10)
+            
+            # Update active subscription credits_used
+            from app.models.subscription import Subscription
+            active_sub = Subscription.query.filter_by(user_id=user.id, status='active').first()
+            if active_sub:
+                active_sub.credits_used = (active_sub.credits_used or 0) + 10
+                
         db.session.commit()
-        return jsonify({'message': 'Interview ended', 'session': session.to_dict()}), 200
+        return jsonify({'message': 'Interview ended and credits deducted', 'session': session.to_dict()}), 200
         
     return jsonify({'message': 'Session not found'}), 404
 
