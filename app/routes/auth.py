@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify, make_response
+import os
+from flask import Blueprint, request, jsonify, make_response, current_app, send_from_directory
+from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, set_access_cookies, unset_jwt_cookies
 from app import db
@@ -85,3 +87,37 @@ def me():
     if not user:
         return jsonify({'message': 'User not found'}), 404
     return jsonify({'user': user.to_dict()}), 200
+
+@auth_bp.route('/profile-image', methods=['POST'])
+@jwt_required()
+def upload_profile_image():
+    if 'file' not in request.files:
+        return jsonify({'message': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'message': 'No selected file'}), 400
+    if file:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        ext = os.path.splitext(secure_filename(file.filename))[1]
+        if ext.lower() not in ['.png', '.jpg', '.jpeg', '.gif', '.webp']:
+            return jsonify({'message': 'Invalid file type'}), 400
+
+        filename = f"profile_{user.id}{ext}"
+        profiles_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'profiles')
+        os.makedirs(profiles_dir, exist_ok=True)
+        file_path = os.path.join(profiles_dir, filename)
+        file.save(file_path)
+
+        user.profile_image = f"/api/auth/uploads/profiles/{filename}"
+        db.session.commit()
+
+        return jsonify({'message': 'Profile image updated', 'user': user.to_dict()}), 200
+
+@auth_bp.route('/uploads/profiles/<filename>', methods=['GET'])
+def get_profile_image(filename):
+    profiles_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'profiles')
+    return send_from_directory(profiles_dir, filename)
