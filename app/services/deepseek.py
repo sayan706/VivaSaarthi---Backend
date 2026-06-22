@@ -72,7 +72,7 @@ def check_answer_relevance(messages, answer):
             break
 
     prompt = [
-        {"role": "system", "content": "You are an AI assistant evaluating an interview. Determine if the user's answer is relevant to the interview and the previous question. If the user asks an irrelevant question (e.g., 'what is the weather') or gives a completely off-topic response, answer with 'IRRELEVANT'. If the user is answering the question, asking for clarification about the interview, or engaging in normal interview dialogue, answer with 'RELEVANT'. Only respond with the exact word RELEVANT or IRRELEVANT."},
+        {"role": "system", "content": "You are an AI evaluating an interview. Determine if the user's answer is an attempt to address the interview question. \nCRITICAL RULES:\n- If the user gives a short, casual, grammatically poor, or vague answer (e.g., 'basically I want to learn so that why', 'I dont know', 'yes'), you MUST answer with 'RELEVANT' because they are participating in the interview context.\n- ONLY answer with 'IRRELEVANT' if the user says something completely off-topic that has absolutely nothing to do with an interview (e.g., 'what is the weather', 'I am fine', 'how do I bake a cake').\nOnly respond with the exact word RELEVANT or IRRELEVANT."},
         {"role": "user", "content": f"Previous Question: {last_question}\n\nUser's input: {answer}"}
     ]
     

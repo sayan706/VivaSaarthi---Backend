@@ -32,4 +32,5 @@ class Config:
 
     # Third Party APIs
     SMALLEST_API_KEY = os.environ.get('SMALLEST_API_KEY')
+    ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY')
     GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')
