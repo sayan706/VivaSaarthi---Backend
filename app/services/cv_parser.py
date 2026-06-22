@@ -116,5 +116,8 @@ IMPORTANT INSTRUCTIONS FOR USING THE CV:
 
 def allowed_file(filename, allowed_extensions):
     """Check if a filename has an allowed extension."""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in allowed_extensions
+    if '.' not in filename:
+        return False
+    ext = filename.rsplit('.', 1)[1].lower()
+    clean_allowed = {e.lstrip('.').lower() for e in allowed_extensions}
+    return ext in clean_allowed

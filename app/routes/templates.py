@@ -1,13 +1,14 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
-from app.models.template import InterviewTemplate
+from app.models import InterviewTemplate, InterviewCategory
 
 templates_bp = Blueprint('templates', __name__)
 
 @templates_bp.route('/categories', methods=['GET'])
 @jwt_required()
 def categories():
-    return jsonify({'categories': ['CSE', 'Government', 'MBA', 'Civil', 'Arts']}), 200
+    categories_list = InterviewCategory.query.filter(InterviewCategory.deleted_at.is_(None)).all()
+    return jsonify({'categories': [c.to_dict() for c in categories_list]}), 200
 
 @templates_bp.route('/templates', methods=['GET'])
 @jwt_required()

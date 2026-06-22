@@ -7,7 +7,7 @@ class InterviewTemplate(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     
-    category = db.Column(db.String(255))
+    category_id = db.Column(db.BigInteger, db.ForeignKey('interview_categories.id'), nullable=True)
     name = db.Column(db.String(255))
     company_name = db.Column(db.String(255), nullable=True)
     
@@ -22,11 +22,13 @@ class InterviewTemplate(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     sessions = db.relationship('InterviewSession', backref='template', lazy=True)
+    category = db.relationship('InterviewCategory', backref=db.backref('templates', lazy=True))
 
     def to_dict(self):
         return {
             'id': self.id,
-            'category': self.category,
+            'category_id': self.category_id,
+            'category': self.category.category_name if self.category else None,
             'name': self.name,
             'company_name': self.company_name,
             'requires_cv': self.requires_cv,

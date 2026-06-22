@@ -48,7 +48,7 @@ def handle_start_interview(data):
         emit('error', {'message': 'Template not found for this session'})
         return
 
-    print(f"Starting interview '{template.title}' for session {request.sid}")
+    print(f"Starting interview '{template.name}' for session {request.sid}")
 
     # Build system prompt
     system_prompt = template.system_prompt
@@ -60,7 +60,7 @@ def handle_start_interview(data):
         cv_context = build_cv_context(cv_text)
         system_prompt = system_prompt + cv_context
         has_cv = True
-        print(f"CV context injected for '{template.title}'")
+        print(f"CV context injected for '{template.name}'")
 
     messages = [
         {"role": "system", "content": system_prompt},

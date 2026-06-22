@@ -2,6 +2,7 @@ import os
 import time
 from openai import OpenAI
 from dotenv import load_dotenv
+from app.config import Config
 
 load_dotenv()
 
