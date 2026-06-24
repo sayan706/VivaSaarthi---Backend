@@ -8,7 +8,7 @@ from app.config import Config
 
 db = SQLAlchemy()
 jwt = JWTManager()
-socketio = SocketIO(cors_allowed_origins="*")
+socketio = SocketIO(cors_allowed_origins="*", async_mode='gevent', ping_timeout=60, ping_interval=25)
 
 def create_app(config_class=Config):
     app = Flask(__name__)
