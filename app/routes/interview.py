@@ -87,6 +87,11 @@ def end():
         session.ended_at = datetime.utcnow()
         session.interview_status = 'completed'
         
+        # Save proctoring metrics if provided
+        session.tab_switch_count = data.get('tab_switch_count', session.tab_switch_count or 0)
+        session.fullscreen_exit_count = data.get('fullscreen_exit_count', session.fullscreen_exit_count or 0)
+        session.face_missing_count = data.get('face_missing_count', session.face_missing_count or 0)
+        
         # Deduct 10 credits
         user = session.user
         if user:
@@ -116,3 +121,14 @@ def get_session(id):
     if not session:
         return jsonify({'message': 'Session not found'}), 404
     return jsonify({'session': session.to_dict()}), 200
+
+@interview_bp.route('/messages/<session_id>', methods=['GET'])
+@jwt_required()
+def get_messages(session_id):
+    from app.models.message import InterviewMessage
+    
+    messages = InterviewMessage.query.filter_by(session_id=session_id).order_by(InterviewMessage.created_at.asc()).all()
+    return jsonify({
+        'messages': [msg.to_dict() for msg in messages]
+    }), 200
+

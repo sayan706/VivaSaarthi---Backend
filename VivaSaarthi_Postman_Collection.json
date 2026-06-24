@@ -414,7 +414,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"session_id\": 1\n}",
+                            "raw": "{\n    \"session_id\": 1,\n    \"tab_switch_count\": 0,\n    \"fullscreen_exit_count\": 0,\n    \"face_missing_count\": 0\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -464,6 +464,25 @@
                             "path": [
                                 "interview",
                                 "session",
+                                "1"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Messages",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/interview/messages/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "interview",
+                                "messages",
                                 "1"
                             ]
                         }
@@ -729,6 +748,38 @@
                                 "payments",
                                 "history"
                             ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "TTS",
+            "item": [
+                {
+                    "name": "Text to Speech",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/tts/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tts",
+                                ""
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"text\": \"Hello, this is a test.\",\n    \"voice_gender\": \"male\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     },
                     "response": []

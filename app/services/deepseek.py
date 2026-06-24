@@ -11,16 +11,46 @@ client = OpenAI(
     base_url="https://api.deepseek.com"
 )
 
-def generate_with_retry(messages, retries=3):
+def generate_with_retry(messages, retries=3, return_dict=False):
     for attempt in range(retries):
         try:
+            model_name = os.getenv("MODEL", "deepseek-chat")
             response = client.chat.completions.create(
-                model=os.getenv("MODEL", "deepseek-chat"),
+                model=model_name,
                 messages=messages,
                 temperature=0.7,
                 max_tokens=2048
             )
-            return response.choices[0].message.content
+            content = response.choices[0].message.content
+            
+            if return_dict:
+                usage_data = response.usage
+                prompt_tokens = usage_data.prompt_tokens if usage_data else 0
+                completion_tokens = usage_data.completion_tokens if usage_data else 0
+                total_tokens = usage_data.total_tokens if usage_data else 0
+                
+                # Dynamic pricing based on model
+                if "gpt-4o" in model_name:
+                    # GPT-4o approx: $5.00/1M prompt, $15.00/1M completion
+                    credits_used = (prompt_tokens / 1000000.0) * 5.00 + (completion_tokens / 1000000.0) * 15.00
+                elif "gpt-3.5" in model_name or "gpt-4o-mini" in model_name:
+                    # GPT-4o-mini approx: $0.15/1M prompt, $0.60/1M completion
+                    credits_used = (prompt_tokens / 1000000.0) * 0.15 + (completion_tokens / 1000000.0) * 0.60
+                else:
+                    # DeepSeek-V3/chat standard pricing: $0.14/1M prompt, $0.28/1M completion
+                    credits_used = (prompt_tokens / 1000000.0) * 0.14 + (completion_tokens / 1000000.0) * 0.28
+                
+                return {
+                    "content": content,
+                    "usage": {
+                        "prompt_tokens": prompt_tokens,
+                        "completion_tokens": completion_tokens,
+                        "total_tokens": total_tokens,
+                        "model_name": model_name,
+                        "credits_used": credits_used
+                    }
+                }
+            return content
         except Exception as e:
             print(f"\nDeepSeek Error (Attempt {attempt + 1}/{retries}): {str(e)}")
             if attempt < retries - 1:
@@ -59,7 +89,28 @@ def generate_with_retry(messages, retries=3):
                     contents=gemini_contents,
                     config=config
                 )
-                return response.text
+                
+                content = response.text
+                if return_dict:
+                    meta = response.usage_metadata
+                    prompt_tokens = meta.prompt_token_count if meta else 0
+                    completion_tokens = meta.candidates_token_count if meta else 0
+                    total_tokens = meta.total_token_count if meta else 0
+                    
+                    # Gemini 1.5 Flash approx: $0.075/1M prompt, $0.3/1M completion
+                    credits_used = (prompt_tokens / 1000000.0) * 0.075 + (completion_tokens / 1000000.0) * 0.3
+                    
+                    return {
+                        "content": content,
+                        "usage": {
+                            "prompt_tokens": prompt_tokens,
+                            "completion_tokens": completion_tokens,
+                            "total_tokens": total_tokens,
+                            "model_name": Config.GEMINI_MODEL,
+                            "credits_used": credits_used
+                        }
+                    }
+                return content
             except Exception as gemini_err:
                 print(f"Gemini fallback also failed: {gemini_err}")
                 raise Exception("Both DeepSeek and Gemini APIs failed to respond.") from gemini_err

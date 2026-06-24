@@ -10,6 +10,7 @@ from app.services.deepseek import generate_with_retry, check_answer_relevance
 from app.services.utils import strip_markdown
 from app.services.cv_parser import build_cv_context
 from app.services.gemini_vision import analyze_frames_batch
+from app.models.message import InterviewMessage
 
 # Store active sessions in memory by socket ID
 sessions = {}
@@ -68,8 +69,23 @@ def handle_start_interview(data):
     ]
 
     # Generate first question
-    first_question = generate_with_retry(messages)
+    resp_data = generate_with_retry(messages, return_dict=True)
+    first_question = resp_data["content"]
+    usage = resp_data["usage"]
     messages.append({"role": "assistant", "content": first_question})
+
+    # Save AI message to DB
+    ai_msg = InterviewMessage(
+        session_id=session_id,
+        message=first_question,
+        is_human=False,
+        prompt_tokens=usage["prompt_tokens"],
+        completion_tokens=usage["completion_tokens"],
+        total_tokens=usage["total_tokens"],
+        model_name=usage["model_name"],
+        credits_used=usage["credits_used"]
+    )
+    db.session.add(ai_msg)
 
     # Save memory session
     sessions[request.sid] = {
@@ -107,6 +123,15 @@ def handle_answer(data):
 
     if answer.lower() in ("quit", "exit", "stop"):
         session['messages'].append({"role": "user", "content": answer})
+        
+        user_msg = InterviewMessage(
+            session_id=session['db_session_id'],
+            message=answer,
+            is_human=True
+        )
+        db.session.add(user_msg)
+        db.session.commit()
+        
         generate_report(request.sid)
         return
 
@@ -125,11 +150,34 @@ def handle_answer(data):
         return
 
     session['messages'].append({"role": "user", "content": answer})
+    
+    user_msg = InterviewMessage(
+        session_id=session['db_session_id'],
+        message=answer,
+        is_human=True
+    )
+    db.session.add(user_msg)
+    db.session.commit()
 
     if session['question_count'] < MAX_QUESTIONS:
-        next_question = generate_with_retry(session['messages'])
+        resp_data = generate_with_retry(session['messages'], return_dict=True)
+        next_question = resp_data["content"]
+        usage = resp_data["usage"]
         session['messages'].append({"role": "assistant", "content": next_question})
         session['question_count'] += 1
+        
+        ai_msg = InterviewMessage(
+            session_id=session['db_session_id'],
+            message=next_question,
+            is_human=False,
+            prompt_tokens=usage["prompt_tokens"],
+            completion_tokens=usage["completion_tokens"],
+            total_tokens=usage["total_tokens"],
+            model_name=usage["model_name"],
+            credits_used=usage["credits_used"]
+        )
+        db.session.add(ai_msg)
+        db.session.commit()
 
         emit('question', {
             'question_number': session['question_count'],
@@ -191,7 +239,23 @@ Ensure the numeric scores are out of 100.
     })
 
     print(f"Generating report for session {sid}...")
-    raw_response = generate_with_retry(session['messages'])
+    resp_data = generate_with_retry(session['messages'], return_dict=True)
+    raw_response = resp_data["content"]
+    usage = resp_data["usage"]
+    
+    # Optional: Save report generation credits as a system message to track it, but the user requested saving chats.
+    # We will log the report message just to track credits usage.
+    report_msg = InterviewMessage(
+        session_id=session['db_session_id'],
+        message="[REPORT_GENERATION]",
+        is_human=False,
+        prompt_tokens=usage["prompt_tokens"],
+        completion_tokens=usage["completion_tokens"],
+        total_tokens=usage["total_tokens"],
+        model_name=usage["model_name"],
+        credits_used=usage["credits_used"]
+    )
+    db.session.add(report_msg)
     
     # Parse the JSON response
     report_data = {}
