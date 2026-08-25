@@ -21,7 +21,7 @@ class Config:
     # JWT Settings
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'default-jwt-secret-key')
     JWT_TOKEN_LOCATION = ['cookies']
-    JWT_COOKIE_SECURE = False  # Set to True in production (HTTPS)
+    JWT_COOKIE_SECURE = True  # HTTPS terminates at Ferron; cookies must only travel over TLS
     JWT_COOKIE_CSRF_PROTECT = False  # Set to True for added security against CSRF
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     
