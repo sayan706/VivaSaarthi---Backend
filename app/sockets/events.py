@@ -15,7 +15,7 @@ from app.models.message import InterviewMessage
 # Store active sessions in memory by socket ID
 sessions = {}
 
-MAX_QUESTIONS = 5
+MAX_QUESTIONS = 15
 MAX_FRAMES_STORED = 20
 
 @socketio.on('connect')

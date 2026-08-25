@@ -28,11 +28,11 @@ def text_to_speech():
     voice_gender = data.get('voice_gender', 'male')
 
     # ElevenLabs Voice IDs
-    # You can replace these with exact Indian Voice IDs from your Voice Library
+    # Using specific Indian Voices from Voice Library
     if voice_gender == 'female':
-        voice_id = "21m00Tcm4TlvDq8ikWAM" # Default: Rachel. Replace with an Indian female voice ID.
+        voice_id = "2F1KINpxsttim2WfMbVs" # Using Bella - Professional, Bright, Warm
     else:
-        voice_id = "pNInz6obpgDQGcFmaJgB" # Default: Adam. Replace with an Indian male voice ID.
+        voice_id = "pqHfZKP75CvOlQylNhV4" # Using Bill - Wise, Mature, Balanced
 
     # Truncate very long text to avoid huge TTS costs
     if len(text) > 1000:
