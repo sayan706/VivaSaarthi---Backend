@@ -62,5 +62,6 @@ exec gunicorn \
     --worker-connections 1000 \
     --timeout 300 \
     --graceful-timeout 60 \
+    --error-logfile - \
     --bind 0.0.0.0:5000 \
     run:app
