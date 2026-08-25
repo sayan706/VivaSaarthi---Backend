@@ -1,0 +1,38 @@
+name: bump-and-deploy
+
+# When this repo's main moves, bump the submodule pointer in the parent
+# (raiden076/vivasaarthi) and push. The parent's deploy.yml fires on that
+# push and deploys the new code to the VPS.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: bump-and-deploy
+  cancel-in-progress: true
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bump parent gitlink
+        env:
+          PARENT_REPO: raiden076/vivasaarthi
+          PARENT_PAT: ${{ secrets.PARENT_PAT }}
+          SELF_PATH: api
+        run: |
+          set -euo pipefail
+          sha="${{ github.sha }}"
+          auth="x-access-token:${PARENT_PAT}"
+          git clone --depth 1 "https://${auth}@github.com/${PARENT_REPO}.git" /tmp/parent
+          git -C /tmp/parent config user.name "viva-bot"
+          git -C /tmp/parent config user.email "deploy@vivasaarthi.local"
+          # Update just this submodule's pointer (no submodule checkout needed).
+          git -C /tmp/parent update-index --cacheinfo 160000,"${sha}","${SELF_PATH}"
+          if ! git -C /tmp/parent diff --cached --quiet; then
+            git -C /tmp/parent commit -m "chore: bump ${SELF_PATH} to ${sha:0:7}"
+            git -C /tmp/parent push "https://${auth}@github.com/${PARENT_REPO}.git" HEAD:main
+            echo "pushed gitlink bump: ${SELF_PATH} -> ${sha}"
+          else
+            echo "gitlink already at ${sha:0:7}; nothing to do"
+          fi
